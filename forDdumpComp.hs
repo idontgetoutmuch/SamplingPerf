@@ -19,8 +19,6 @@ import System.Random.Stateful (StatefulGen, uniformDouble01M)
 class Monad m => MonadSample m where
   random :: m Double
 
--- The general version
-
 newtype Sampler g m a = Sampler (StatefulGen g m => ReaderT g m a)
 
 runSampler :: StatefulGen g m => Sampler g m a -> ReaderT g m a
@@ -42,31 +40,8 @@ instance Monad (Sampler g m) where
 instance MonadSample (Sampler g m) where
   random = Sampler (ReaderT uniformDouble01M)
 
--- A specialised version
-
-newtype SamplerIO a = SamplerIO (ReaderT GenIO IO a)
-
-runSamplerIO :: SamplerIO a -> ReaderT GenIO IO a
-runSamplerIO (SamplerIO s) = s
-
-sampleIOwith :: SamplerIO a -> Gen RealWorld -> IO a
-sampleIOwith (SamplerIO m) = runReaderT m
-
-instance Functor SamplerIO where
-  fmap f (SamplerIO s) = SamplerIO $ fmap f s
-
-instance Applicative SamplerIO where
-  pure x = SamplerIO $ pure x
-  (SamplerIO f) <*> (SamplerIO x) = SamplerIO $ f <*> x
-
-instance Monad SamplerIO where
-  (SamplerIO x) >>= f = SamplerIO $ x >>= runSamplerIO . f
-
-instance MonadSample SamplerIO where
-  random = SamplerIO $ ask >>= lift . uniformDouble01M
-
 main :: IO ()
 main = do
   g <- createSystemRandom
-  xs <- sampleIOwith (replicateM 1000000 random) g
+  xs <- sampleWith (replicateM 1000000 random) g
   print $ sum xs

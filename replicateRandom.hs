@@ -12,7 +12,6 @@ import Control.Monad.Trans.Reader (ReaderT (..), ask, runReaderT)
 import System.Random.MWC
   ( Gen,
     GenIO,
-    Variate (uniform),
     createSystemRandom,
   )
 import System.Random.Stateful (StatefulGen, uniformDouble01M)
@@ -66,7 +65,7 @@ instance Monad SamplerIO where
   (SamplerIO x) >>= f = SamplerIO $ x >>= runSamplerIO . f
 
 instance MonadSample SamplerIO where
-  random = SamplerIO $ ask >>= lift . System.Random.MWC.uniform
+  random = SamplerIO $ ask >>= lift . uniformDouble01M
 
 main :: IO ()
 main = do
